@@ -11,7 +11,6 @@ object Main extends App {
   val summaryActor = system.actorOf(SummaryActor.props, "summary")
   println(s"Summary path: ${summaryActor.path}")
   summaryActor ! Nlp
-  summaryActor ! Nlp
 
   println(">>> Press ENTER to exit <<<")
   try StdIn.readLine()
