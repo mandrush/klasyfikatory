@@ -1,15 +1,15 @@
 package actors
 
 import akka.actor.{Actor, Props}
-import constants.Const
-
 class SummaryActor extends Actor {
-  import Const._
+
+  import constants.Classifiers._
+
   override def receive: Receive = {
-    case Nlp =>
-      val nlpActor = context.actorOf(NLPActor.props)
-      println(s"Stworzono ${nlpActor.path}")
-      nlpActor ! Analyze
+    case classifier: Classifiers =>
+      println(s"Przekazuję ${classifier.toString} do agenta NLP")
+      context.actorOf(NLPActor.props) ! classifier
+
     case m: String => println(s"summary: $m")
   }
 }
