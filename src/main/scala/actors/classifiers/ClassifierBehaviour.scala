@@ -6,8 +6,10 @@ import akka.actor.Actor
 import constants.NLPFile
 import opennlp.tools.doccat.{DoccatFactory, DocumentCategorizerME, DocumentSampleStream}
 import opennlp.tools.ml.AbstractTrainer
+import opennlp.tools.util.eval.FMeasure
 import opennlp.tools.util.{MarkableFileInputStreamFactory, PlainTextByLineStream, TrainingParameters}
 
+import scala.collection.JavaConverters._
 import scala.io.Source
 import scala.util.Random
 
@@ -49,6 +51,7 @@ trait ClassifierBehaviour extends Actor {
         .map(_.split(","))
         .map(a => a.head.toInt -> a.last)
         .toMap
+
       val idsWithSentiment = Source
         .fromFile(idsWithSentimentPath)
         .getLines
@@ -56,18 +59,16 @@ trait ClassifierBehaviour extends Actor {
         .map(a => a.head.toInt -> a.last)
         .toMap
 
-      var i = 0
-
-      idsWithSentences
+      val zipped = idsWithSentences
         .zip(idsWithSentiment)
         .map { case (left, right) => left._2 -> right._2 }
-        .foreach { case (sentence, sentiment) =>
+        .map { case (sentence, sentiment) =>
           val outcome = doccat.getBestCategory(doccat.categorize(sentenceToWords(sentence)))
-          println(s"Expected: $sentiment, actual: $outcome : $sentence")
-          if (outcome == sentiment) i += 1
+          (outcome, sentiment)
         }
 
-      println(i.toFloat / idsWithSentences.size)
-      println("---------------------------------")
+      val unzipped = zipped.unzip
+      println(FMeasure.precision(unzipped._2.toArray, unzipped._1.toArray))
+      println(FMeasure.recall(unzipped._2.toArray, unzipped._1.toArray))
   }
 }
