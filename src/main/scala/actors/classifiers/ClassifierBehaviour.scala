@@ -28,6 +28,7 @@ trait ClassifierBehaviour extends Actor {
       val dataIn = new MarkableFileInputStreamFactory(new File(p))
       val lineStream = new PlainTextByLineStream(dataIn, "UTF-8")
       val sampleStream = new DocumentSampleStream(lineStream)
+      val trainingSize = Source.fromFile(p).getLines().size
 
       val params = new TrainingParameters
       params.put(TrainingParameters.ITERATIONS_PARAM, iterations.toString)
@@ -66,8 +67,16 @@ trait ClassifierBehaviour extends Actor {
         s"""
            |$classifierName:
            |Iterations: $iterations
-               Recall: ${FMeasure.recall(unzipped._1.toArray.asInstanceOf[Array[AnyRef]], unzipped._2.toArray)}
-               Precision: ${FMeasure.precision(unzipped._1.toArray.asInstanceOf[Array[AnyRef]], unzipped._2.toArray)}
+               Recall: ${
+          FMeasure.recall(unzipped._1.toArray.asInstanceOf[Array[AnyRef]] ++
+          Array.fill(trainingSize) {""},
+          unzipped._2.toArray)
+        }
+               Precision: ${
+          FMeasure.precision(unzipped._1.toArray.asInstanceOf[Array[AnyRef]] ++
+          Array.fill(trainingSize) {""},
+          unzipped._2.toArray)
+        }
             """.stripMargin)
   }
 }
