@@ -35,12 +35,12 @@ trait ClassifierBehaviour extends Actor {
       params.put(TrainingParameters.CUTOFF_PARAM, cutoff.toString)
       params.put(AbstractTrainer.ALGORITHM_PARAM, algorithmType)
 
-      println(s"NaiveBayes of id ${self.path} begins training ...")
+      println(s"$classifierName of id ${self.path} begins training ...")
       val model = DocumentCategorizerME.train("en", sampleStream, params, new DoccatFactory)
 
       val modelOut = new BufferedOutputStream(new FileOutputStream(s"src/main/resources/models/model_$classifierName" + Random.nextInt))
       model.serialize(modelOut)
-      println(s"NaiveBayes of id ${self.path} ended training, saved model ")
+      println(s"$classifierName of id ${self.path} ended training, saved model ")
 
       val doccat = new DocumentCategorizerME(model)
 

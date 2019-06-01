@@ -1,12 +1,17 @@
 package actors.classifiers
 
-import akka.actor.{Actor, Props}
-import constants.NLPFile
+import akka.actor.Props
+import opennlp.tools.ml.maxent.quasinewton.QNTrainer
 
-class LogRegressionActor extends Actor {
-  override def receive: Receive = {
-    case NLPFile(p) => sender ! "od logistycznej"
-  }
+class LogRegressionActor extends ClassifierBehaviour {
+
+  import constants.FilePaths._
+
+  override val testFilePath: String = imdbTestPath
+  override val algorithmType: String = QNTrainer.MAXENT_QN_VALUE
+  override val cutoff: Int = 0
+  override val iterations: Int = 10
+  override val classifierName: String = "LogisticRegression_QN"
 }
 
 object LogRegressionActor {

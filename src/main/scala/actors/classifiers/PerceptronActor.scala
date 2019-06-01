@@ -1,12 +1,17 @@
 package actors.classifiers
 
-import akka.actor.{Actor, Props}
-import constants.NLPFile
+import akka.actor.Props
+import opennlp.tools.ml.perceptron.PerceptronTrainer
 
-class PerceptronActor extends Actor {
-  override def receive: Receive = {
-    case NLPFile(p) => println("a tu bedzie implementacja perceptronu")
-  }
+class PerceptronActor extends ClassifierBehaviour {
+
+  import constants.FilePaths._
+
+  override val testFilePath: String = imdbTestPath
+  override val algorithmType: String = PerceptronTrainer.PERCEPTRON_VALUE
+  override val cutoff: Int = 0
+  override val iterations: Int = 10
+  override val classifierName: String = "Perceptron"
 }
 
 object PerceptronActor {
