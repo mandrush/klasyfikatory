@@ -2,6 +2,6 @@ package constants
 
 object FilePaths {
 
-  val SentimentTrainingPath = "src/main/resources/sentiment/sentyment_tren.txt"
+  val imdbTrainingPath = "src/main/resources/imdb/imdb_train.csv"
 
 }

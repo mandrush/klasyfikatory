@@ -13,8 +13,8 @@ class NLPActor extends Actor {
     case Bayes         =>
 //      tu sie po prostu bedzie dawac wiecej plikow i w klasyfikatorze odbierac liste plikow czy cos
 //      tzn pliki beda walone do FilePaths.scala i uzywane jako consty zeby sie nie pomieszalo ;----))))
-      val sentimentTraining = NLPFile(SentimentTrainingPath)
-      context.actorOf(NaiveBayesActor.props) ! sentimentTraining
+      val imdbTraining = NLPFile(imdbTrainingPath)
+      context.actorOf(NaiveBayesActor.props) ! imdbTraining
     case Perceptron         =>
       println("tu bedzie implementacja perceptronu!")
     case GIS                =>
