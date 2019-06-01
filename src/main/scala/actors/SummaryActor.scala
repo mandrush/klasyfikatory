@@ -7,7 +7,7 @@ class SummaryActor extends Actor {
 
   override def receive: Receive = {
     case classifier: Classifiers =>
-      println(s"Przekazuję ${classifier.toString} do agenta NLP")
+      println(s"Using ${classifier.toString} agent...")
       context.actorOf(NLPActor.props) ! classifier
 
     case m: String => println(s"summary: $m")

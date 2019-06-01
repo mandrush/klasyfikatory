@@ -14,7 +14,6 @@ import scala.util.Random
 
 trait ClassifierBehaviour extends Actor {
 
-  val testFilePath: String
   val algorithmType: String
   val iterations: Int
   val classifierName: String
@@ -23,11 +22,11 @@ trait ClassifierBehaviour extends Actor {
     sentence.replaceAll("[^A-Za-z]", " ").split(" ")
 
   override def receive: Receive = {
-    case (NLPFile(p), cutoff: Int) =>
-      val dataIn = new MarkableFileInputStreamFactory(new File(p))
+    case ((NLPFile(training), NLPFile(test)), cutoff: Int) =>
+      val dataIn = new MarkableFileInputStreamFactory(new File(training))
       val lineStream = new PlainTextByLineStream(dataIn, "UTF-8")
       val sampleStream = new DocumentSampleStream(lineStream)
-      val trainingSize = Source.fromFile(p).getLines().size
+      val trainingSize = Source.fromFile(training).getLines().size
 
       val params = new TrainingParameters
       params.put(TrainingParameters.ITERATIONS_PARAM, iterations.toString)
@@ -45,7 +44,7 @@ trait ClassifierBehaviour extends Actor {
 
       var i = 0
       val classWithSentence = Source
-        .fromFile(testFilePath)
+        .fromFile(test)
         .getLines
         .map(_.split('|'))
         .map( a => a.head -> a.last )

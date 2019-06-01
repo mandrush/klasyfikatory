@@ -5,9 +5,6 @@ import opennlp.tools.ml.perceptron.PerceptronTrainer
 
 class PerceptronActor extends ClassifierBehaviour {
 
-  import constants.FilePaths._
-
-  override val testFilePath: String = imdbTestPath
   override val algorithmType: String = PerceptronTrainer.PERCEPTRON_VALUE
   override val iterations: Int = 10
   override val classifierName: String = "Perceptron"
