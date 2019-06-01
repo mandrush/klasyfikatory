@@ -8,7 +8,9 @@ object Main extends App {
 
   val summaryActor = system.actorOf(SummaryActor.props, "summary")
 
-  while(true) {
+  loop()
+
+  private def loop(): Unit = {
     println(
       """Choose an option:
         |- "classifier" to choose a classifier
@@ -32,10 +34,10 @@ object Main extends App {
           case "perceptron" => summaryActor ! Perceptron
           case "gis"        => summaryActor ! GIS
           case "regression" => summaryActor ! LogisticRegression
-          case _            => println("Wrong option!")
+          case _            => println("Wrong option!"); loop()
         }
       case "exit"        => java.lang.System.exit(0)
-      case _             => println("Wrong option!")
+      case _             => println("Wrong option!"); loop()
     }
   }
 

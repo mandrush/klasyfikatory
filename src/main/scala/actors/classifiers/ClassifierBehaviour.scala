@@ -16,7 +16,6 @@ trait ClassifierBehaviour extends Actor {
 
   val testFilePath: String
   val algorithmType: String
-  val cutoff: Int
   val iterations: Int
   val classifierName: String
 
@@ -24,7 +23,7 @@ trait ClassifierBehaviour extends Actor {
     sentence.replaceAll("[^A-Za-z]", " ").split(" ")
 
   override def receive: Receive = {
-    case NLPFile(p) =>
+    case (NLPFile(p), cutoff: Int) =>
       val dataIn = new MarkableFileInputStreamFactory(new File(p))
       val lineStream = new PlainTextByLineStream(dataIn, "UTF-8")
       val sampleStream = new DocumentSampleStream(lineStream)
@@ -78,6 +77,8 @@ trait ClassifierBehaviour extends Actor {
           unzipped._2.toArray)
         }
             """.stripMargin)
+
+
   }
 }
 

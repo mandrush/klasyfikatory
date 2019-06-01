@@ -9,7 +9,6 @@ class GISActor extends ClassifierBehaviour {
 
   override val testFilePath: String = imdbTestPath
   override val algorithmType: String = GISTrainer.MAXENT_VALUE
-  override val cutoff: Int = 0
   override val iterations: Int = 10
   override val classifierName: String = "LogisticRegression_GIS"
 
