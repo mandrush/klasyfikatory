@@ -20,9 +20,9 @@ class NLPActor extends Actor {
 
   override def receive: Receive = {
     case Bayes => context.actorOf(NaiveBayesActor.props) ! (whichData(), enterCutoff())
-    case Perceptron => context.actorOf(PerceptronActor.props) ! (imdbTraining, enterCutoff())
-    case GIS => context.actorOf(GISActor.props) ! (imdbTraining, enterCutoff())
-    case LogisticRegression => context.actorOf(LogRegressionActor.props) ! (imdbTraining, enterCutoff())
+    case Perceptron => context.actorOf(PerceptronActor.props) ! (whichData(), enterCutoff())
+    case GIS => context.actorOf(GISActor.props) ! (whichData(), enterCutoff())
+    case LogisticRegression => context.actorOf(LogRegressionActor.props) ! (whichData(), enterCutoff())
 
     case m: String => context.parent ! m
   }
