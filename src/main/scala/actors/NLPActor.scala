@@ -19,10 +19,10 @@ class NLPActor extends Actor {
   private val hotelTest = NLPFile(hotelTestPath)
 
   override def receive: Receive = {
-    case Bayes => context.actorOf(NaiveBayesActor.props) ! (whichData(), enterCutoff())
-    case Perceptron => context.actorOf(PerceptronActor.props) ! (whichData(), enterCutoff())
-    case GIS => context.actorOf(GISActor.props) ! (whichData(), enterCutoff())
-    case LogisticRegression => context.actorOf(LogRegressionActor.props) ! (whichData(), enterCutoff())
+    case Bayes => context.actorOf(NaiveBayesActor.props) ! (whichData(), enterCutoff(), isCrossValidation())
+    case Perceptron => context.actorOf(PerceptronActor.props) ! (whichData(), enterCutoff(), isCrossValidation())
+    case GIS => context.actorOf(GISActor.props) ! (whichData(), enterCutoff(), isCrossValidation())
+    case LogisticRegression => context.actorOf(LogRegressionActor.props) ! (whichData(), enterCutoff(), isCrossValidation())
 
     case m: String => context.parent ! m
   }
@@ -31,14 +31,14 @@ class NLPActor extends Actor {
   private def enterCutoff(): Int = {
     println("Enter the cutoff: ")
     print("$ ")
-      Try(StdIn.readInt()) match {
-        case Success(x) => x match {
-          case y if y >= 0 => y
-          case y if y < 0 => println("Cutoff can't be lower than 0!"); enterCutoff()
-        }
-        case Failure(_) => println("Enter an integer!"); enterCutoff()
+    Try(StdIn.readInt()) match {
+      case Success(x) => x match {
+        case y if y >= 0 => y
+        case y if y < 0 => println("Cutoff can't be lower than 0!"); enterCutoff()
       }
+      case Failure(_) => println("Enter an integer!"); enterCutoff()
     }
+  }
 
   @tailrec
   private def whichData(): (NLPFile, NLPFile) = {
@@ -51,6 +51,17 @@ class NLPActor extends Actor {
         case _ => println("Choose 1 or 2!!!"); whichData()
       }
       case Failure(_) => println("Enter only 1 or 2!"); whichData()
+    }
+  }
+
+  @tailrec
+  private def isCrossValidation(): Boolean = {
+    println("Do you want to train using cross validation [y/n]?")
+    print("$ ")
+    StdIn.readLine match {
+      case "y" => true
+      case "n" => false
+      case _ => println("Please enter y or n."); isCrossValidation()
     }
   }
 }
