@@ -17,28 +17,30 @@ class NLPActor extends Actor {
   private val imdbTest = NLPFile(imdbTestPath)
   private val hotelTraining = NLPFile(hotelTrainingPath)
   private val hotelTest = NLPFile(hotelTestPath)
+  private val oneVsAllFiles = AmodeList.map(NLPFile)
+  private val allVsAllFiles = BmodeList.map(NLPFile)
 
   override def receive: Receive = {
-    case Bayes => context.actorOf(NaiveBayesActor.props) ! (whichData(), enterCutoff())
-    case Perceptron => context.actorOf(PerceptronActor.props) ! (whichData(), enterCutoff())
-    case GIS => context.actorOf(GISActor.props) ! (whichData(), enterCutoff())
-    case LogisticRegression => context.actorOf(LogRegressionActor.props) ! (whichData(), enterCutoff())
+    case Bayes => context.actorOf(NaiveBayesActor.props) ! (whichData(), 1, isCrossValidation(), )
+    case Perceptron => context.actorOf(PerceptronActor.props) ! (whichData(), 1, isCrossValidation())
+    case GIS => context.actorOf(GISActor.props) ! (whichData(), 1, isCrossValidation())
+    case LogisticRegression => context.actorOf(LogRegressionActor.props) ! (whichData(), 1, isCrossValidation())
 
     case m: String => context.parent ! m
   }
 
   @tailrec
-  private def enterCutoff(): Int = {
-    println("Enter the cutoff: ")
+  private def OVAorAVA(): List[NLPFile] = {
+    println("A - One vs All classification; B - All vs All")
     print("$ ")
-      Try(StdIn.readInt()) match {
-        case Success(x) => x match {
-          case y if y >= 0 => y
-          case y if y < 0 => println("Cutoff can't be lower than 0!"); enterCutoff()
-        }
-        case Failure(_) => println("Enter an integer!"); enterCutoff()
+    StdIn.readLine() match {
+      case opt => opt match {
+        case "A" => println("one vs all chosen"); oneVsAllFiles
+        case "B" => println("all vs all chosen"); allVsAllFiles
+        case _ => println("A OR B ONLY!"); OVAorAVA()
       }
     }
+  }
 
   @tailrec
   private def whichData(): (NLPFile, NLPFile) = {
@@ -51,6 +53,17 @@ class NLPActor extends Actor {
         case _ => println("Choose 1 or 2!!!"); whichData()
       }
       case Failure(_) => println("Enter only 1 or 2!"); whichData()
+    }
+  }
+
+  @tailrec
+  private def isCrossValidation(): Boolean = {
+    println("Do you want to train using cross validation [y/n]?")
+    print("$ ")
+    StdIn.readLine match {
+      case "y" => true
+      case "n" => false
+      case _ => println("Please enter y or n."); isCrossValidation()
     }
   }
 }
