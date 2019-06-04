@@ -17,26 +17,28 @@ class NLPActor extends Actor {
   private val imdbTest = NLPFile(imdbTestPath)
   private val hotelTraining = NLPFile(hotelTrainingPath)
   private val hotelTest = NLPFile(hotelTestPath)
+  private val oneVsAllFiles = AmodeList.map(NLPFile)
+  private val allVsAllFiles = BmodeList.map(NLPFile)
 
   override def receive: Receive = {
-    case Bayes => context.actorOf(NaiveBayesActor.props) ! (whichData(), enterCutoff(), isCrossValidation())
-    case Perceptron => context.actorOf(PerceptronActor.props) ! (whichData(), enterCutoff(), isCrossValidation())
-    case GIS => context.actorOf(GISActor.props) ! (whichData(), enterCutoff(), isCrossValidation())
-    case LogisticRegression => context.actorOf(LogRegressionActor.props) ! (whichData(), enterCutoff(), isCrossValidation())
+    case Bayes => context.actorOf(NaiveBayesActor.props) ! (whichData(), 1, isCrossValidation(), )
+    case Perceptron => context.actorOf(PerceptronActor.props) ! (whichData(), 1, isCrossValidation())
+    case GIS => context.actorOf(GISActor.props) ! (whichData(), 1, isCrossValidation())
+    case LogisticRegression => context.actorOf(LogRegressionActor.props) ! (whichData(), 1, isCrossValidation())
 
     case m: String => context.parent ! m
   }
 
   @tailrec
-  private def enterCutoff(): Int = {
-    println("Enter the cutoff: ")
+  private def OVAorAVA(): List[NLPFile] = {
+    println("A - One vs All classification; B - All vs All")
     print("$ ")
-    Try(StdIn.readInt()) match {
-      case Success(x) => x match {
-        case y if y >= 0 => y
-        case y if y < 0 => println("Cutoff can't be lower than 0!"); enterCutoff()
+    StdIn.readLine() match {
+      case opt => opt match {
+        case "A" => println("one vs all chosen"); oneVsAllFiles
+        case "B" => println("all vs all chosen"); allVsAllFiles
+        case _ => println("A OR B ONLY!"); OVAorAVA()
       }
-      case Failure(_) => println("Enter an integer!"); enterCutoff()
     }
   }
 
