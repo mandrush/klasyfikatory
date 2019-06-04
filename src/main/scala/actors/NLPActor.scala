@@ -2,7 +2,8 @@ package actors
 
 import actors.classifiers.{GISActor, LogRegressionActor, NaiveBayesActor, PerceptronActor}
 import akka.actor.{Actor, Props}
-import constants.NLPFile
+import constants.Multiclass.Multiclass
+import constants.{Multiclass, NLPFile}
 
 import scala.annotation.tailrec
 import scala.io.StdIn
@@ -21,22 +22,22 @@ class NLPActor extends Actor {
   private val allVsAllFiles = BmodeList.map(NLPFile)
 
   override def receive: Receive = {
-    case Bayes => context.actorOf(NaiveBayesActor.props) ! (whichData(), 1, isCrossValidation(), )
-    case Perceptron => context.actorOf(PerceptronActor.props) ! (whichData(), 1, isCrossValidation())
-    case GIS => context.actorOf(GISActor.props) ! (whichData(), 1, isCrossValidation())
-    case LogisticRegression => context.actorOf(LogRegressionActor.props) ! (whichData(), 1, isCrossValidation())
+    case Bayes => context.actorOf(NaiveBayesActor.props) ! OVAorAVA()
+    case Perceptron => context.actorOf(PerceptronActor.props) ! OVAorAVA()
+    case GIS => context.actorOf(GISActor.props) ! OVAorAVA()
+    case LogisticRegression => context.actorOf(LogRegressionActor.props) ! OVAorAVA()
 
     case m: String => context.parent ! m
   }
 
   @tailrec
-  private def OVAorAVA(): List[NLPFile] = {
+  private def OVAorAVA(): (List[NLPFile], Multiclass) = {
     println("A - One vs All classification; B - All vs All")
     print("$ ")
     StdIn.readLine() match {
       case opt => opt match {
-        case "A" => println("one vs all chosen"); oneVsAllFiles
-        case "B" => println("all vs all chosen"); allVsAllFiles
+        case "A" => println("one vs all chosen"); (oneVsAllFiles, Multiclass.OneVSAll)
+        case "B" => println("all vs all chosen"); (allVsAllFiles, Multiclass.AllVSAll)
         case _ => println("A OR B ONLY!"); OVAorAVA()
       }
     }
