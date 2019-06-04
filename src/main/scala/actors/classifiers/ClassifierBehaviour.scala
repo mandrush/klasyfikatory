@@ -86,7 +86,58 @@ trait ClassifierBehaviour extends Actor {
         }
             """.stripMargin)
 
+    case (trainList: List[NLPFile], Multiclass.AllVSAll) =>
+      val trainingSize = trainList.map(training => Source.fromFile(training.path).getLines().size).sum
 
+      println(s"$classifierName of id ${self.path} begins training in All vs All mode...")
+      val models = buildModels(trainList)
+      val doccatsWithClasses = models
+        .zip(List("12", "13", "14", "15", "23", "24", "25", "34", "35", "45"))
+        .map { case (model, name) => (name, new DocumentCategorizerME(model)) }
+
+      println(s"$classifierName of id ${self.path} ended training in All vs All mode, saved 10 models ")
+
+      val classWithProbabilities = doccatsWithClasses.map { case (name, doccat) =>
+        classWithSentenceFromTest.map { case (_, sentence) => doccat.getBestCategory(doccat.categorize(sentenceToWords(sentence)))
+        }
+      }
+
+
+      var i = 0
+      val results = probMapToResultsAllvsAll(classWithProbabilities)
+      val classesFromTest = classWithSentenceFromTest.map(tuple => tuple._1)
+      val finalLists = classesFromTest.zip(results)
+        .map { case (expected, actual) =>
+          i += 1
+          s"$expected$i" -> s"$actual$i"
+        }.unzip
+
+      println(
+        s"""
+           |$classifierName:
+           |Iterations: $iterations
+               Recall: ${
+          FMeasure.recall(finalLists._1.toArray.asInstanceOf[Array[AnyRef]] ++
+            Array.fill(trainingSize) {
+              ""
+            },
+            finalLists._2.toArray)
+        }
+               Precision: ${
+          FMeasure.precision(finalLists._1.toArray.asInstanceOf[Array[AnyRef]] ++
+            Array.fill(trainingSize) {
+              ""
+            },
+            finalLists._2.toArray)
+        }
+               F1 score: ${
+          fmeasure(finalLists._1.toArray.asInstanceOf[Array[AnyRef]] ++
+            Array.fill(trainingSize) {
+              ""
+            },
+            finalLists._2.toArray)
+        }
+            """.stripMargin)
 
 
     case ((NLPFile(training), NLPFile(test)), false) =>
@@ -103,11 +154,7 @@ trait ClassifierBehaviour extends Actor {
 
       println(s"$classifierName of id ${self.path} begins training ...")
       val model = DocumentCategorizerME.train("en", sampleStream, params, new DoccatFactory)
-      //      todo nie jeden model a 5 dla A i 10 dla B (per kazdy dataset)
-      //      todo pozniej do kazdego modelu
-
       println(s"$classifierName of id ${self.path} ended training, saved model ")
-      //todo tu de facto bedzie x modeli wiec x doccatów i dla kazdego trzba bedzie wywolac blok kodu 53-62
       val doccat = new DocumentCategorizerME(model)
 
       val classWithSentence = Source
@@ -224,6 +271,36 @@ trait ClassifierBehaviour extends Actor {
       (names(3), listA4(i)),
       (names(4), listA5(i)))
         .maxBy(_._2)._1
+    }
+    result.toList
+  }
+
+  private def probMapToResultsAllvsAll(list: List[List[String]]): List[String] = {
+    val list12 = list.head
+    val list13 = list(1)
+    val list14 = list(2)
+    val list15 = list(3)
+    val list23 = list(4)
+    val list24 = list(5)
+    val list25 = list(6)
+    val list34 = list(7)
+    val list35 = list(8)
+    val list45 = list(9)
+
+    val result = new ListBuffer[String]()
+    for (i <- list12.indices) {
+      result += List(list12(i),
+        list13(i),
+        list14(i),
+        list15(i),
+        list23(i),
+        list24(i),
+        list25(i),
+        list34(i),
+        list35(i),
+        list45(i)
+      )
+        .groupBy(identity).mapValues(_.size).maxBy(_._2)._1
     }
     result.toList
   }
