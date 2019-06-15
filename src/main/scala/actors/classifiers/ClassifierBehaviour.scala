@@ -1,16 +1,16 @@
 package actors.classifiers
 
-import java.io.File
+import java.io.{BufferedOutputStream, File, FileOutputStream}
+import java.nio.file.{Files, Path, Paths}
 
 import akka.actor.Actor
 import constants.NLPFile
-import opennlp.tools.cmdline.doccat.DoccatEvaluationErrorListener
-import opennlp.tools.doccat.{DoccatCrossValidator, DoccatFactory, DocumentCategorizerME, DocumentSampleStream}
+import opennlp.tools.doccat.{DoccatFactory, DocumentCategorizerME, DocumentSampleStream}
 import opennlp.tools.ml.AbstractTrainer
-import opennlp.tools.util.eval.FMeasure
 import opennlp.tools.util.{MarkableFileInputStreamFactory, PlainTextByLineStream, TrainingParameters}
 
-import scala.io.Source
+import scala.annotation.tailrec
+import scala.io.{Source, StdIn}
 
 trait ClassifierBehaviour extends Actor {
 
@@ -18,98 +18,49 @@ trait ClassifierBehaviour extends Actor {
   val iterations: Int
   val classifierName: String
 
+  val modelsRoot = "src/main/resources/models/"
   def sentenceToWords(sentence: String): Array[String] =
     sentence.replaceAll("[^A-Za-z]", " ").split(" ")
 
   override def receive: Receive = {
-    case ((NLPFile(training), NLPFile(test)), cutoff: Int, false) =>
+    case NLPFile(training) =>
 
       val dataIn = new MarkableFileInputStreamFactory(new File(training))
       val lineStream = new PlainTextByLineStream(dataIn, "UTF-8")
       val sampleStream = new DocumentSampleStream(lineStream)
-      val trainingSize = Source.fromFile(training).getLines().size
 
       val params = new TrainingParameters
       params.put(TrainingParameters.ITERATIONS_PARAM, iterations.toString)
-      params.put(TrainingParameters.CUTOFF_PARAM, cutoff.toString)
+      params.put(TrainingParameters.CUTOFF_PARAM, 10.toString)
       params.put(AbstractTrainer.ALGORITHM_PARAM, algorithmType)
 
       println(s"$classifierName of id ${self.path} begins training ...")
       val model = DocumentCategorizerME.train("en", sampleStream, params, new DoccatFactory)
 
-      println(s"$classifierName of id ${self.path} ended training, saved model ")
+      if (!Files.exists(Paths.get(modelsRoot + classifierName) )) {
+        val modelOut = new BufferedOutputStream(new FileOutputStream(s"$modelsRoot$classifierName"))
+        model.serialize(modelOut)
+      } else {
 
-      val doccat = new DocumentCategorizerME(model)
+        println(s"$classifierName of id ${self.path} ended training, saved model ")
 
-      var i = 0
-      val classWithSentence = Source
-        .fromFile(test)
-        .getLines
-        .map(_.split('|'))
-        .map( a => a.head -> a.last )
-        .toList
+        val doccat = new DocumentCategorizerME(model)
+        val consoleSentence = yourSms()
 
-      val zipped = classWithSentence
-        .map { case (clazz, sentence) =>
-          val outcome = doccat.getBestCategory(doccat.categorize(sentenceToWords(sentence)))
-          (clazz, outcome)
-        }
-        .map {case (c, o) =>
-          i += 1
-          s"$c$i" -> s"$o$i"
-        }
+        val outcome = doccat.getBestCategory(doccat.categorize(sentenceToWords(consoleSentence)))
 
-      val unzipped = zipped.unzip
-      println(
-        s"""
-           |$classifierName:
-           |Iterations: $iterations
-               Recall: ${
-          FMeasure.recall(unzipped._1.toArray.asInstanceOf[Array[AnyRef]] ++
-          Array.fill(trainingSize) {""},
-          unzipped._2.toArray)
-        }
-               Precision: ${
-          FMeasure.precision(unzipped._1.toArray.asInstanceOf[Array[AnyRef]] ++
-          Array.fill(trainingSize) {""},
-          unzipped._2.toArray)
-        }
-               F1 score: ${
-          fmeasure(unzipped._1.toArray.asInstanceOf[Array[AnyRef]] ++
-            Array.fill(trainingSize) {""},
-            unzipped._2.toArray)
-        }
-            """.stripMargin)
-
-    case ((NLPFile(training), _), cutoff: Int, true) =>
-      val nFolds = 10
-      println(s"Cross validation of $algorithmType using $nFolds subsets")
-
-      val dataIn = new MarkableFileInputStreamFactory(new File(training))
-      val lineStream = new PlainTextByLineStream(dataIn, "UTF-8")
-      val sampleStream = new DocumentSampleStream(lineStream)
-      val trainingSize = Source.fromFile(training).getLines().size
-
-      val params = new TrainingParameters
-      params.put(TrainingParameters.ITERATIONS_PARAM, iterations.toString)
-      params.put(TrainingParameters.CUTOFF_PARAM, cutoff.toString)
-      params.put(AbstractTrainer.ALGORITHM_PARAM, algorithmType)
-
-      println(s"Beginning cross validation training of $algorithmType")
-      val crossValidator = new DoccatCrossValidator("en", params, new DoccatFactory, new DoccatEvaluationErrorListener)
-      crossValidator.evaluate(sampleStream, nFolds)
-
-      println(
-        s"""$classifierName:
-           | Cross validation accuracy: ${crossValidator.getDocumentAccuracy}
-         """.stripMargin)
-
+        println(
+          s"""
+             |Your SMS was $consoleSentence
+             |This SMS was identified as $outcome
+          """)
+      }
   }
 
-  private def fmeasure(references: Array[AnyRef], predictions: Array[AnyRef]): Double = {
-    val fMeasure = new FMeasure
-    fMeasure.updateScores(references, predictions)
-    fMeasure.getFMeasure
+  def yourSms(): String = {
+    println("Enter any SMS you can think of: ")
+    print("$ ")
+    StdIn.readLine()
   }
 }
 
