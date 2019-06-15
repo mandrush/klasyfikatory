@@ -8,6 +8,7 @@ class PerceptronActor extends ClassifierBehaviour {
   override val algorithmType: String = PerceptronTrainer.PERCEPTRON_VALUE
   override val iterations: Int = 10
   override val classifierName: String = "Perceptron"
+  println(s"$classifierName created")
 }
 
 object PerceptronActor {

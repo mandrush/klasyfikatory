@@ -8,7 +8,7 @@ class GISActor extends ClassifierBehaviour {
   override val algorithmType: String = GISTrainer.MAXENT_VALUE
   override val iterations: Int = 10
   override val classifierName: String = "LogisticRegression_GIS"
-
+  println(s"$classifierName created")
 }
 
 object GISActor {

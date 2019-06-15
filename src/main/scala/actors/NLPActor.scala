@@ -1,35 +1,52 @@
 package actors
 
-import actors.classifiers._
-import akka.actor.{Actor, Props}
-import constants.{Classifiers, NLPFile, Trainings}
+import java.io.FileNotFoundException
 
-import scala.annotation.tailrec
-import scala.io.StdIn
-import scala.util.{Failure, Success, Try}
+import actors.classifiers._
+import akka.actor.SupervisorStrategy._
+import akka.actor.{Actor, OneForOneStrategy, Props, SupervisorStrategy}
+import constants.Trainings
+
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.duration._
 
 class NLPActor extends Actor {
 
-  import constants.Classifiers._
-  import constants.Trainings._
+  override def supervisorStrategy: SupervisorStrategy =
+    OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute) {
+      case _: ArithmeticException => Resume
+      case _: NullPointerException => Restart
+      case _: FileNotFoundException => Restart
+      case _: Exception => Escalate
+    }
+
+  var responseList = new ListBuffer[String]()
 
   override def receive: Receive = {
 
-    case _ =>
+    case sms: String =>
       List(
         context.actorOf(NaiveBayesActor.props),
         context.actorOf(PerceptronActor.props),
         context.actorOf(GISActor.props),
         context.actorOf(LogRegressionActor.props)
-      ) foreach ( _ ! Trainings.spamTraining)
+      ) foreach (_ ! (Trainings.spamTraining, sms))
 
-//    case Bayes => context.actorOf(NaiveBayesActor.props) ! Trainings.spamTraining
-//    case Perceptron => context.actorOf(PerceptronActor.props) ! (whichData(), enterCutoff(), isCrossValidation())
-//    case GIS => context.actorOf(GISActor.props) ! (whichData(), enterCutoff(), isCrossValidation())
-//    case LogisticRegression => context.actorOf(LogRegressionActor.props) ! (whichData(), enterCutoff(), isCrossValidation())
+    case (outcome: String, sentence: String) =>
+      responseList += outcome
+      if (responseList.length == 4) {
+        println(responseList)
+      }
 
-    case m: String => context.parent ! m
   }
+
+
+  //    println(
+  //          s"""
+  //             |Your SMS was $consoleSentence
+  //             |This SMS was identified as $outcome
+  //          """)
+  //  }
 
 }
 

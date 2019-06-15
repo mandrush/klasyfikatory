@@ -8,6 +8,8 @@ class NaiveBayesActor extends ClassifierBehaviour {
   override val iterations: Int = 10
   override val algorithmType: String = NaiveBayesTrainer.NAIVE_BAYES_VALUE
   override val classifierName: String = "Naive_Bayes"
+
+  println(s"$classifierName created")
 }
 
 object NaiveBayesActor {
