@@ -40,7 +40,7 @@ trait ClassifierBehaviour extends Actor {
         println(s"$classifierName of id ${self.path} ended training, saved model ")
       } else {
 
-        val modelIn = new BufferedInputStream(new FileInputStream(s"$modelsRoot$classifierName ssssssssssss"))
+        val modelIn = new BufferedInputStream(new FileInputStream(s"$modelsRoot$classifierName"))
         val model = new DoccatModel(modelIn)
         val doccat = new DocumentCategorizerME(model)
         val outcome = doccat.getBestCategory(doccat.categorize(sentenceToWords(consoleSentence)))

@@ -1,4 +1,6 @@
 import actors.NLPActor
+import actors.classifiers.SupervisorActor
+import actors.classifiers.SupervisorActor._
 import akka.actor.ActorSystem
 
 import scala.io.StdIn
@@ -7,7 +9,7 @@ object Main extends App {
 
   import ASystem._
 
-  val nlpActor = system.actorOf(NLPActor.props, "nlp")
+  val supervisorAgent = system.actorOf(SupervisorActor.props, "nlp")
 
   loop()
 
@@ -19,18 +21,13 @@ object Main extends App {
     print("$ ")
     StdIn.readLine() match {
       case "SMS" =>
-        nlpActor ! yourSms()
+        supervisorAgent ! yourSms()
       case "exit" => java.lang.System.exit(0)
       case _ => println("Wrong option!"); loop()
     }
   }
 
-  def yourSms(): String = {
-    println(s"Enter any SMS you can think of: ")
-    print("$ ")
-    StdIn.readLine()
 
-  }
 }
 
 object ASystem {

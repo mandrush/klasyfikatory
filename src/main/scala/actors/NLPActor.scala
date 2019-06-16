@@ -1,24 +1,12 @@
 package actors
 
-import java.io.FileNotFoundException
-
 import actors.classifiers._
-import akka.actor.SupervisorStrategy._
-import akka.actor.{Actor, OneForOneStrategy, Props, SupervisorStrategy}
+import akka.actor.{Actor, Props}
 import constants.Trainings
 
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.duration._
 
 class NLPActor extends Actor {
-
-  override def supervisorStrategy: SupervisorStrategy =
-    OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute) {
-      case _: ArithmeticException => Resume
-      case _: NullPointerException => Restart
-      case _: FileNotFoundException => Restart
-      case _: Exception => Escalate
-    }
 
   var responseList = new ListBuffer[String]()
 
@@ -35,19 +23,11 @@ class NLPActor extends Actor {
     case (outcome: String, sentence: String) =>
       responseList += outcome
       if (responseList.length == 4) {
-        println(responseList)
+        val verdict = responseList.groupBy(identity).mapValues(_.size).maxBy(_._2)._1
+        responseList foreach ( responseList -= _)
+        context.parent ! (sentence, verdict)
       }
-
   }
-
-
-  //    println(
-  //          s"""
-  //             |Your SMS was $consoleSentence
-  //             |This SMS was identified as $outcome
-  //          """)
-  //  }
-
 }
 
 object NLPActor {
